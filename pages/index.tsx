@@ -38,16 +38,22 @@ const MermaidRenderer = ({ content }: { content: string }) => {
   return <div dangerouslySetInnerHTML={{ __html: svg }} />
 }
 
+// 安全的 HTML 渲染器
+const SafeHtml = ({ html }: { html: string }) => (
+  <div dangerouslySetInnerHTML={{ __html: html }} />
+)
+
 export default function Home() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isTyping, setIsTyping] = useState(false)
   const [currentTypingMessage, setCurrentTypingMessage] = useState('')
   const chatContainerRef = useRef<HTMLDivElement>(null)
-  const [sidePanel, setSidePanel] = useState<{ isOpen: boolean; content: string; isMermaid: boolean }>({
+  const [sidePanel, setSidePanel] = useState<{ isOpen: boolean; content: string; isMermaid: boolean; isHtml: boolean }>({
     isOpen: false,
     content: '',
     isMermaid: false,
+    isHtml: false,
   })
   const [showMermaidSource, setShowMermaidSource] = useState(false)
 
@@ -120,12 +126,13 @@ export default function Home() {
 
   const handleCodeBlockClick = (content: string, language: string) => {
     const isMermaid = language === 'mermaid'
-    setSidePanel({ isOpen: true, content, isMermaid })
+    const isHtml = language === 'html'
+    setSidePanel({ isOpen: true, content, isMermaid, isHtml })
     setShowMermaidSource(false)
   }
 
   const closeSidePanel = () => {
-    setSidePanel({ isOpen: false, content: '', isMermaid: false })
+    setSidePanel({ isOpen: false, content: '', isMermaid: false, isHtml: false })
   }
 
   const toggleMermaidView = () => {
@@ -154,7 +161,7 @@ export default function Home() {
           className="code-block-preview"
           onClick={() => handleCodeBlockClick(codeContent, language)}
         >
-          点击查看{language === 'mermaid' ? '图表' : '代码'} ({language})
+          点击查看{language === 'mermaid' ? '图表' : language === 'html' ? 'HTML' : '代码'} ({language})
         </div>
       )
       lastIndex = match.index + match[0].length
@@ -207,13 +214,15 @@ export default function Home() {
       {sidePanel.isOpen && (
         <div className="side-panel">
           <button className="close-button" onClick={closeSidePanel}>关闭</button>
-          {sidePanel.isMermaid && (
+          {(sidePanel.isMermaid || sidePanel.isHtml) && (
             <button className="toggle-button" onClick={toggleMermaidView}>
-              {showMermaidSource ? '查看图表' : '查看源码'}
+              {showMermaidSource ? '查看渲染结果' : '查看源码'}
             </button>
           )}
           {sidePanel.isMermaid && !showMermaidSource ? (
             <MermaidRenderer content={sidePanel.content} />
+          ) : sidePanel.isHtml && !showMermaidSource ? (
+            <SafeHtml html={sidePanel.content} />
           ) : (
             <pre><code>{sidePanel.content}</code></pre>
           )}
