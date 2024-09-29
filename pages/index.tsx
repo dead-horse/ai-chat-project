@@ -43,6 +43,12 @@ const SafeHtml = ({ html }: { html: string }) => (
   <div dangerouslySetInnerHTML={{ __html: html }} />
 )
 
+const recommendedQuestions = [
+  "画一个 TCP 建立连接的时序图",
+  "用 HTML 绘制一个登陆页",
+  "实现一个 BI 看板页"
+]
+
 export default function Home() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
@@ -118,7 +124,7 @@ export default function Home() {
         }
       }
     } catch (error) {
-      console.error('API 请求错误:', error)
+      console.error('API 请错误:', error)
       setIsTyping(false)
       setMessages(prev => [...prev, { role: 'assistant', content: `错误: ${error.message}` }])
     }
@@ -137,6 +143,11 @@ export default function Home() {
 
   const toggleMermaidView = () => {
     setShowMermaidSource(!showMermaidSource)
+  }
+
+  const handleRecommendedQuestion = (question: string) => {
+    setInput(question)
+    handleSubmit(new Event('submit') as React.FormEvent<HTMLFormElement>)
   }
 
   const renderMessage = (content: string) => {
@@ -181,13 +192,29 @@ export default function Home() {
   return (
     <div className="container">
       <Head>
-        <title>AI多轮对话应用</title>
+        <title>Aily Play</title>
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&display=swap" rel="stylesheet" />
       </Head>
 
       <main className="main">
-        <h1 className="title">AI多轮对话应用</h1>
+        <h1 className="title">Aily Play</h1>
         <div className="chat-container" ref={chatContainerRef}>
+          {messages.length === 0 && (
+            <div className="recommended-questions">
+              <h2>推荐问题</h2>
+              <div className="question-cards">
+                {recommendedQuestions.map((question, index) => (
+                  <div 
+                    key={index} 
+                    className="question-card"
+                    onClick={() => handleRecommendedQuestion(question)}
+                  >
+                    {question}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {messages.map((msg, index) => (
             <div key={index} className={`message ${msg.role}`}>
               {renderMessage(msg.content)}
@@ -213,23 +240,34 @@ export default function Home() {
 
       {sidePanel.isOpen && (
         <div className="side-panel">
-          <button className="close-button" onClick={closeSidePanel}>关闭</button>
-          {(sidePanel.isMermaid || sidePanel.isHtml) && (
-            <button className="toggle-button" onClick={toggleMermaidView}>
-              {showMermaidSource ? '查看渲染结果' : '查看源码'}
-            </button>
-          )}
-          {sidePanel.isMermaid && !showMermaidSource ? (
-            <MermaidRenderer content={sidePanel.content} />
-          ) : sidePanel.isHtml && !showMermaidSource ? (
-            <SafeHtml html={sidePanel.content} />
-          ) : (
-            <pre><code>{sidePanel.content}</code></pre>
-          )}
+          <div className="side-panel-buttons">
+            <div className="button-group">
+              {(sidePanel.isMermaid || sidePanel.isHtml) && (
+                <button className="panel-button" onClick={toggleMermaidView}>
+                  {showMermaidSource ? '查看渲染结果' : '查看源码'}
+                </button>
+              )}
+              <button className="panel-button close-button" onClick={closeSidePanel}>关闭</button>
+            </div>
+          </div>
+          <div className="side-panel-content">
+            {sidePanel.isMermaid && !showMermaidSource ? (
+              <MermaidRenderer content={sidePanel.content} />
+            ) : sidePanel.isHtml && !showMermaidSource ? (
+              <SafeHtml html={sidePanel.content} />
+            ) : (
+              <pre><code>{sidePanel.content}</code></pre>
+            )}
+          </div>
         </div>
       )}
 
       <style jsx global>{`
+        body {
+          background-color: white;
+          margin: 0;
+          padding: 0;
+        }
         .container {
           min-height: 100vh;
           padding: 0 0.5rem;
@@ -237,7 +275,7 @@ export default function Home() {
           flex-direction: column;
           justify-content: center;
           align-items: center;
-          background-color: #f0f0f0;
+          background-color: white; // 修改为白色
         }
         .main {
           padding: 5rem 0;
@@ -259,10 +297,9 @@ export default function Home() {
           width: 100%;
           height: 60vh;
           overflow-y: auto;
-          border: 1px solid #ddd;
-          border-radius: 8px;
           padding: 1rem;
           background-color: white;
+          // 移除了 border 属性
         }
         .message {
           max-width: 80%;
@@ -295,13 +332,14 @@ export default function Home() {
           display: flex;
           width: 100%;
           margin-top: 1rem;
+          gap: 0.5rem; // 添加间距
         }
         .input-field {
           flex-grow: 1;
           padding: 0.5rem;
           font-size: 1rem;
           border: 1px solid #ddd;
-          border-radius: 4px 0 0 4px;
+          border-radius: 4px; // 改为完整的圆角
         }
         .send-button {
           padding: 0.5rem 1rem;
@@ -309,8 +347,9 @@ export default function Home() {
           color: white;
           background-color: #007bff;
           border: none;
-          border-radius: 0 4px 4px 0;
+          border-radius: 4px; // 保持一致的圆角
           cursor: pointer;
+          transition: background-color 0.2s; // 添加过渡效果
         }
         .send-button:hover {
           background-color: #0056b3;
@@ -363,16 +402,18 @@ export default function Home() {
         }
 
         .code-block-preview {
-          background-color: #f0f0f0;
-          padding: 0.5rem;
-          margin: 0.5rem 0;
+          background-color: white;
+          padding: 0.75rem 1rem;
+          margin: 1rem 0;
           border-radius: 4px;
           cursor: pointer;
           transition: background-color 0.2s;
+          border: 1px solid #e0e0e0;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .code-block-preview:hover {
-          background-color: #e0e0e0;
+          background-color: #f8f8f8;
         }
 
         .side-panel {
@@ -386,32 +427,37 @@ export default function Home() {
           padding: 1rem;
           overflow-y: auto;
           z-index: 1000;
+          display: flex;
+          flex-direction: column;
         }
 
-        .close-button {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          padding: 5px 10px;
-          background-color: #f0f0f0;
-          border: none;
+        .side-panel-buttons {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 1rem;
+        }
+
+        .button-group {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .panel-button {
+          padding: 0.5rem 1rem;
+          background-color: white;
+          border: 1px solid #ddd;
           border-radius: 4px;
           cursor: pointer;
+          transition: background-color 0.2s;
         }
 
-        .toggle-button {
-          position: absolute;
-          top: 10px;
-          right: 80px;
-          padding: 5px 10px;
+        .panel-button:hover {
           background-color: #f0f0f0;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
         }
 
-        .mermaid {
-          text-align: center;
+        .side-panel-content {
+          flex-grow: 1;
+          overflow-y: auto;
         }
 
         .side-panel pre {
@@ -419,11 +465,43 @@ export default function Home() {
           padding: 1rem;
           border-radius: 4px;
           overflow-x: auto;
+          margin-top: 1rem;
         }
 
         .side-panel svg {
           max-width: 100%;
           height: auto;
+        }
+
+        .recommended-questions {
+          text-align: center;
+          margin-bottom: 2rem;
+        }
+
+        .recommended-questions h2 {
+          font-size: 1.5rem;
+          margin-bottom: 1rem;
+        }
+
+        .question-cards {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 1rem;
+        }
+
+        .question-card {
+          background-color: #f0f0f0;
+          border-radius: 8px;
+          padding: 1rem;
+          cursor: pointer;
+          transition: background-color 0.2s, transform 0.2s;
+          max-width: 200px;
+        }
+
+        .question-card:hover {
+          background-color: #e0e0e0;
+          transform: translateY(-2px);
         }
       `}</style>
     </div>
