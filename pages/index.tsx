@@ -150,7 +150,12 @@ export default function Home() {
 
   const handleRecommendedQuestion = (question: string) => {
     setInput(question)
-    handleSubmit(new Event('submit') as React.FormEvent<HTMLFormElement>)
+    // 创建一个合成的表单提交事件
+    const syntheticEvent = {
+      preventDefault: () => {},
+    } as React.FormEvent<HTMLFormElement>;
+    
+    handleSubmit(syntheticEvent)
   }
 
   const renderMessage = (content: string) => {
@@ -193,52 +198,54 @@ export default function Home() {
   }
 
   return (
-    <div className="container">
+    <div className="container flex">
       <Head>
         <title>Aily Play</title>
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&display=swap" rel="stylesheet" />
       </Head>
 
-      <main className="main">
-        <h1 className="title">Aily Play</h1>
-        <div className="chat-container" ref={chatContainerRef}>
-          {messages.length === 0 && (
-            <div className="recommended-questions">
-              <h2>推荐问题</h2>
-              <div className="question-cards">
-                {recommendedQuestions.map((question, index) => (
-                  <div 
-                    key={index} 
-                    className="question-card"
-                    onClick={() => handleRecommendedQuestion(question)}
-                  >
-                    {question}
-                  </div>
-                ))}
+      <main className={`main ${sidePanel.isOpen ? 'with-side-panel' : ''}`}>
+        <div className="chat-wrapper">
+          <h1 className="title">Aily Play</h1>
+          <div className="chat-container" ref={chatContainerRef}>
+            {messages.length === 0 && (
+              <div className="recommended-questions">
+                <h2>推荐问题</h2>
+                <div className="question-cards">
+                  {recommendedQuestions.map((question, index) => (
+                    <div 
+                      key={index} 
+                      className="question-card"
+                      onClick={() => handleRecommendedQuestion(question)}
+                    >
+                      {question}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-          {messages.map((msg, index) => (
-            <div key={index} className={`message ${msg.role}`}>
-              {renderMessage(msg.content)}
-            </div>
-          ))}
-          {isTyping && (
-            <div className="message assistant typing">
-              {renderMessage(currentTypingMessage)}
-              <span className="typing-indicator">▋</span>
-            </div>
-          )}
+            )}
+            {messages.map((msg, index) => (
+              <div key={index} className={`message ${msg.role}`}>
+                {renderMessage(msg.content)}
+              </div>
+            ))}
+            {isTyping && (
+              <div className="message assistant typing">
+                {renderMessage(currentTypingMessage)}
+                <span className="typing-indicator">▋</span>
+              </div>
+            )}
+          </div>
+          <form onSubmit={handleSubmit} className="input-form">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="输入您的消息..."
+              className="input-field"
+            />
+            <button type="submit" className="send-button">发送</button>
+          </form>
         </div>
-        <form onSubmit={handleSubmit} className="input-form">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="输入您的消息..."
-            className="input-field"
-          />
-          <button type="submit" className="send-button">发</button>
-        </form>
       </main>
 
       {sidePanel.isOpen && (
@@ -288,43 +295,71 @@ export default function Home() {
       )}
 
       <style jsx global>{`
-        body {
-          background-color: white;
+        html, body {
+          height: 100%;
           margin: 0;
           padding: 0;
+          overflow: hidden;
         }
         .container {
-          min-height: 100vh;
-          padding: 0 0.5rem;
+          height: 100vh;
+          padding: 0;
           display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          background-color: white; // 修改为白色
+          background-color: white;
+          overflow: hidden;
         }
         .main {
-          padding: 5rem 0;
           flex: 1;
+          padding: 1rem;
+          transition: width 0.3s ease;
           display: flex;
-          flex-direction: column;
           justify-content: center;
-          align-items: center;
+          overflow: hidden;
+        }
+        .main.with-side-panel {
+          width: 60%;
+        }
+        .chat-wrapper {
           width: 100%;
           max-width: 800px;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
         }
         .title {
-          margin: 0 0 2rem;
-          line-height: 1.15;
-          font-size: 3rem;
+          margin: 0 0 1rem 0;
+          font-size: 1.5rem;
           text-align: center;
         }
         .chat-container {
-          width: 100%;
-          height: 60vh;
+          flex-grow: 1;
           overflow-y: auto;
           padding: 1rem;
-          background-color: white;
-          // 移除了 border 属性
+          margin-bottom: 1rem;
+        }
+        .input-form {
+          display: flex;
+          gap: 0.5rem;
+          padding-bottom: 1rem;
+        }
+        .input-field {
+          flex-grow: 1;
+          padding: 0.5rem;
+          font-size: 1rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+        .send-button {
+          padding: 0.5rem 1rem;
+          font-size: 1rem;
+          color: white;
+          background-color: #007bff;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        .send-button:hover {
+          background-color: #0056b3;
         }
         .message {
           max-width: 80%;
@@ -352,32 +387,6 @@ export default function Home() {
           display: inline-block;
           width: 10px;
           animation: blink 0.7s infinite;
-        }
-        .input-form {
-          display: flex;
-          width: 100%;
-          margin-top: 1rem;
-          gap: 0.5rem; // 添加间距
-        }
-        .input-field {
-          flex-grow: 1;
-          padding: 0.5rem;
-          font-size: 1rem;
-          border: 1px solid #ddd;
-          border-radius: 4px; // 改为完整的圆角
-        }
-        .send-button {
-          padding: 0.5rem 1rem;
-          font-size: 1rem;
-          color: white;
-          background-color: #007bff;
-          border: none;
-          border-radius: 4px; // 保持一致的圆角
-          cursor: pointer;
-          transition: background-color 0.2s; // 添加过渡效果
-        }
-        .send-button:hover {
-          background-color: #0056b3;
         }
         @keyframes blink {
           0% { opacity: 0.2; }
@@ -442,36 +451,26 @@ export default function Home() {
         }
 
         .side-panel {
-          position: fixed;
-          top: 0;
-          right: 0;
           width: 40%;
-          height: 100%;
+          height: 100vh;
           background-color: white;
-          box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-          display: flex;
-          flex-direction: column;
-          z-index: 1000;
+          border-left: 1px solid #e0e0e0;
+          overflow-y: auto;
+          padding: 1rem;
         }
 
         .side-panel-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 1rem;
-          border-bottom: 1px solid #e0e0e0;
+          margin-bottom: 1rem;
         }
 
         .close-icon {
           background: none;
           border: none;
           cursor: pointer;
-          padding: 0.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
           color: #666;
-          transition: color 0.2s;
         }
 
         .close-icon:hover {
