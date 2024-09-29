@@ -10,7 +10,13 @@
     "tailwindcss": "^3.3.0",
     "postcss": "^8.4.14",
     "autoprefixer": "^10.4.7",
-    "@tailwindcss/typography": "^0.5.9"
+    "@tailwindcss/typography": "^0.5.9",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.294.0",
+    "tailwind-merge": "^2.0.0",
+    "tailwindcss-animate": "^1.0.7"
   },
   "scripts": {
     "dev": "next dev",
@@ -20,7 +26,7 @@
   },
   "devDependencies": {
     "@types/react": "18.3.10",
-    "@types/multer": "^1.4.7",
+    "@types/node": "^20.10.4",
     "typescript": "5.6.2"
   }
 }

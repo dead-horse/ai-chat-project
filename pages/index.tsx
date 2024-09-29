@@ -3,6 +3,8 @@ import Head from 'next/head'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import dynamic from 'next/dynamic'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { X } from 'lucide-react'  // 导入关闭图标
 
 interface Message {
   role: 'user' | 'assistant'
@@ -62,6 +64,7 @@ export default function Home() {
     isHtml: false,
   })
   const [showMermaidSource, setShowMermaidSource] = useState(false)
+  const [activeTab, setActiveTab] = useState<string>("rendered")
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -134,7 +137,7 @@ export default function Home() {
     const isMermaid = language === 'mermaid'
     const isHtml = language === 'html'
     setSidePanel({ isOpen: true, content, isMermaid, isHtml })
-    setShowMermaidSource(false)
+    setActiveTab("rendered")  // 默认显示渲染结果
   }
 
   const closeSidePanel = () => {
@@ -234,27 +237,49 @@ export default function Home() {
             placeholder="输入您的消息..."
             className="input-field"
           />
-          <button type="submit" className="send-button">发送</button>
+          <button type="submit" className="send-button">发</button>
         </form>
       </main>
 
       {sidePanel.isOpen && (
         <div className="side-panel">
-          <div className="side-panel-buttons">
-            <div className="button-group">
-              {(sidePanel.isMermaid || sidePanel.isHtml) && (
-                <button className="panel-button" onClick={toggleMermaidView}>
-                  {showMermaidSource ? '查看渲染结果' : '查看源码'}
-                </button>
-              )}
-              <button className="panel-button close-button" onClick={closeSidePanel}>关闭</button>
-            </div>
+          <div className="side-panel-header">
+            {(sidePanel.isMermaid || sidePanel.isHtml) && (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-[300px] grid-cols-2 gap-4 p-1 bg-white rounded-lg border border-gray-200">
+                  <TabsTrigger 
+                    value="rendered" 
+                    className="px-4 py-2 text-sm font-medium transition-colors rounded-md bg-white hover:bg-gray-100 data-[state=active]:bg-gray-200"
+                  >
+                    渲染结果
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="source" 
+                    className="px-4 py-2 text-sm font-medium transition-colors rounded-md bg-white hover:bg-gray-100 data-[state=active]:bg-gray-200"
+                  >
+                    源代码
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
+            <button className="close-icon" onClick={closeSidePanel}>
+              <X size={24} />
+            </button>
           </div>
           <div className="side-panel-content">
-            {sidePanel.isMermaid && !showMermaidSource ? (
-              <MermaidRenderer content={sidePanel.content} />
-            ) : sidePanel.isHtml && !showMermaidSource ? (
-              <SafeHtml html={sidePanel.content} />
+            {(sidePanel.isMermaid || sidePanel.isHtml) ? (
+              <Tabs value={activeTab} className="w-full">
+                <TabsContent value="rendered">
+                  {sidePanel.isMermaid ? (
+                    <MermaidRenderer content={sidePanel.content} />
+                  ) : sidePanel.isHtml ? (
+                    <SafeHtml html={sidePanel.content} />
+                  ) : null}
+                </TabsContent>
+                <TabsContent value="source">
+                  <pre><code>{sidePanel.content}</code></pre>
+                </TabsContent>
+              </Tabs>
             ) : (
               <pre><code>{sidePanel.content}</code></pre>
             )}
@@ -424,53 +449,75 @@ export default function Home() {
           height: 100%;
           background-color: white;
           box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-          padding: 1rem;
-          overflow-y: auto;
-          z-index: 1000;
           display: flex;
           flex-direction: column;
+          z-index: 1000;
         }
 
-        .side-panel-buttons {
+        .side-panel-header {
           display: flex;
-          justify-content: flex-end;
-          margin-bottom: 1rem;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem;
+          border-bottom: 1px solid #e0e0e0;
         }
 
-        .button-group {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .panel-button {
-          padding: 0.5rem 1rem;
-          background-color: white;
-          border: 1px solid #ddd;
-          border-radius: 4px;
+        .close-icon {
+          background: none;
+          border: none;
           cursor: pointer;
-          transition: background-color 0.2s;
+          padding: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #666;
+          transition: color 0.2s;
         }
 
-        .panel-button:hover {
-          background-color: #f0f0f0;
+        .close-icon:hover {
+          color: #000;
+        }
+
+        /* 自定义 Tabs 样式 */
+        [role="tablist"] {
+          background-color: white;
+          border-radius: 8px;
+          padding: 4px;
+          display: inline-flex;
+          gap: 16px;
+          border: 1px solid #e5e7eb; /* 更浅的边框颜色 */
+        }
+
+        [role="tab"] {
+          padding: 8px 16px;
+          font-size: 14px;
+          font-weight: 500;
+          transition: background-color 0.2s, color 0.2s;
+          border-radius: 6px;
+          background-color: white;
+          color: #333;
+          cursor: pointer;
+          border: 1px solid #e5e7eb; /* 更浅的边框颜色 */
+        }
+
+        [role="tab"]:hover {
+          background-color: #f3f4f6;
+        }
+
+        [role="tab"][data-state="active"] {
+          background-color: #e5e7eb; /* 更深的背景颜色 */
+          color: #000;
         }
 
         .side-panel-content {
-          flex-grow: 1;
-          overflow-y: auto;
+          padding: 1rem;
         }
 
-        .side-panel pre {
+        .side-panel-content pre {
           background-color: #f4f4f4;
           padding: 1rem;
           border-radius: 4px;
           overflow-x: auto;
-          margin-top: 1rem;
-        }
-
-        .side-panel svg {
-          max-width: 100%;
-          height: auto;
         }
 
         .recommended-questions {
